@@ -12,7 +12,7 @@ which work in exactly the same way, and enable up to 64 computers to be
 connected together serially.
 
 Unfortunately, the protocol used for the Network is peculiar to Sinclair
-machines and only QLs (including AURORA), QXLs, THORs and ZX Spectrums
+machines and only QLs (including AURORA), QXLs, THORs, ZX Spectrums and, as of June 2019, the Q68 (with a small hardware adpater)
 may be connected together in this way. This is known as QNet. If you
 only need to network these machines together then you can take advantage
 of several different options to get the most out of the original QNet.
@@ -54,11 +54,10 @@ characters from the screen properly..
 A17.1 QNet
 ----------
 
-This system allows Standard QLs, QXLs, AURORAs, THOR computers and ZX
-Spectrums (with Interface 1 attached) to be connected together in a
-network. However, although data can be sent to a ZX Spectrum, the data
-is corrupted if the Spectrum tries to send more than one byte to another
-type of machine.
+This system allows Standard QLs, QXLs, AURORAs, THOR computers, ZX
+Spectrums (with Interface 1 attached) as well as the Q68 to be connected together in a
+network. However, although data can be sent to a ZX Spectrum, receiving data from the Spectrum is unreliable unless 
+using another Spectrum or the Q68.
 
 Minerva, SMSQ/E and Toolkit II all improve the reliability of this
 Network system. if you are not using Toolkit II, Minerva v1.96 is
@@ -69,12 +68,10 @@ A17.1.1 Connecting Machines
 
 To connect the machines, a cable must be used to connect one network
 port on each computer to one of the ports on the next computer in line.
-Having chained all of the computers together in this fashion, the
-Network should be completed by connecting the last computer in the chain
-to the first, thus completing a circle (although this is not always
-necessary).
+Having chained all of the computers together in this fashion, the computers at the two ends of the chain should 
+be left with only one port connected to ensure that the line is terminated correctly - i.e. do not form a 'closed loop.'
 
-The cable need only be twin core, and it is advisable in a large Network
+The cable need only be twin core with standard 3.5mm 'jack-plugs' (ideally, mono 'TS' type) at either end, and it is advisable in a large Network
 to use low-capacitance cable (eg. bell wire), connecting the centres of
 each jack to each other and the outsides to each other. The maximum
 amount of cable that can be reliably used is approximately 100 metres,
@@ -116,9 +113,11 @@ no default and this therefore must be one of the following letters:
   the form \_n, where n represents the station number of the other machine
   you wish to communicate with.
 
-  n=0 is treated as a special case - see below.
+  n=0 is treated as a special case, indicating broadcast input or output - see below.
 
-  The default is \_0.
+<buffer>When n=0, an optional buffer size (in KB) can be specified to a broadcast receive operation.
+
+  The default is \_0, in which case all but a few KB of available RAM is allocated to the buffer.
 
 This Device Driver allows data to either be transmitted to a specific
 machine, or broadcast to any machine which is listening to the Network.
@@ -132,7 +131,7 @@ to open a channel to NETO\_0, for example::
     OPEN_NEW #3,NETO_0
 
 To listen to data which is being Broadcast, the listening stations will
-need to open a channel NETI\_0, for example with::
+need to open a channel NETI\_0, (with optionasl buffer size specified) for example with::
 
     OPEN_IN #4,NETI_0
 
@@ -193,16 +192,14 @@ secondary output port open at all times, which can be used to Broadcast
 to the listening stations when to open and/or close their own input
 ports.
 
-Data is transmitted in packets of a specified size (the size depends on
-the type of device driver). The size of the packet determines the
-smallest amount of data that can be sent - any spare values will be set
-to zero. If the amount of data is greater than the packet size, then it
+Data is transmitted in packets of up to a maximum size (the size depends on
+the type of device driver). If the amount of data is greater than the packet size, then it
 will be sent as several packets. However, a packet will only be sent
 down the Network if it is full, therefore if some data remains to be
 sent which does not completely fill a packet, the sending machine will
 need to CLOSE the channel, or flush the network (this requires a
 specialised routine - FLUSH will not work on a network device) in order
-to send the remaining pieces of data.
+to send the remaining pieces of data. The last packet sent will often be smaller than the maximum.
 
 The NET device is greatly improved if Toolkit II is present (or a THOR
 XVI is being used), and we shall deal with this separately.
@@ -210,7 +207,7 @@ XVI is being used), and we shall deal with this separately.
 A17.1.4 QNet without Toolkit II
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Data is transmitted in packets of 255 bytes preceded by a small Network
+Data is transmitted in packets of up to 255 bytes preceded by a small Network
 header in the following format:
 
 +----------+------------+--------+------------------------------------------------------------------------------------------------------------------------------+
@@ -266,10 +263,10 @@ to just wait around for the data to be sent.
 When the channel is closed, the device will try to output one final
 packet of data (this means that a minimum of one packet can be sent). If
 it fails to send the packet, then it will try a further 1399 times
-(causing an extremely long delay), after which the QL will give up. No
+(equating to about 20 seconds), after which the QL will give up. No
 error message is returned to tell the sending computer that it has
 failed to send the data. This means that CLOSEing a NETO channel, even
-though no data has been sent through the Network, produces an extremely
+though no data has been sent through the Network, produces a
 long delay before the computer can do anything else (and may even crash
 some versions of the QL ROM if nothing has been written to the port -
 see CLOSE).
@@ -292,7 +289,7 @@ send the last packet, the Break key is also checked for on the sending
 machine, allowing you to break into this early.
 
 The Net header for the fileserver has also been improved to allow blocks
-of up to 1000 bytes to be sent at a time and also to improve the
+of up to 1020 bytes (255 x4) to be sent at a time and also to improve the
 checksum.
 
 If the driver fails to send the last packet (despite retrying 1399
